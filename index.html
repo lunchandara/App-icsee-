@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ICSee Pro - ប្រព័ន្ធគ្រប់គ្រងកាមេរ៉ាសុវត្ថិភាព</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                        },
+                        emerald: {
+                            400: '#34D399',
+                            500: '#10B981',
+                            600: '#059669',
+                        },
+                        icsee: {
+                            darkBg: '#0b0f19',
+                            darkCard: '#131b2e',
+                            darkBorder: '#1f293d',
+                            accent: '#10B981'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kantumruy Pro', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-family-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Khmer -->
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #10B981;
+            border-radius: 4px;
+        }
+        /* Camera Lens effect animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .live-pulse {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        /* Radar sweep effect */
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .radar-line {
+            animation: radar-sweep 4s linear infinite;
+            transform-origin: bottom right;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-icsee-darkBg text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 flex flex-col overflow-x-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white/80 dark:bg-icsee-darkCard/90 backdrop-blur-md border-b border-slate-200 dark:border-icsee-darkBorder sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+            <button id="sidebarToggle" class="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-white font-bold">
+                    <i class="fa-solid fa-video text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">ICSee Pro</h1>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium" data-lang="subHeader">ប្រព័ន្ធសុវត្ថិភាពឆ្លាតវៃ v3.4</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Status & Top Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+            <!-- System Status -->
+            <div class="hidden sm:flex items-center space-x-2 bg-slate-100 dark:bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700/50 text-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 live-pulse"></span>
+                <span class="text-slate-600 dark:text-slate-300 font-medium" data-lang="systemNormal">ប្រព័ន្ធដំណើរការល្អ</span>
+                <span class="text-slate-400">|</span>
+                <span id="systemClock" class="font-mono text-emerald-600 dark:text-emerald-400">00:00:00</span>
+            </div>
+
+            <!-- Add Device Button -->
+            <button onclick="openConfigModal()" class="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow-md shadow-emerald-500/20 transition-all active:scale-95">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span class="hidden md:inline" data-lang="addDevice">បន្ថែមឧបករណ៍</span>
+            </button>
+
+            <!-- Language Switcher -->
+            <button id="langToggleBtn" onclick="toggleLanguage()" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors flex items-center space-x-1">
+                <i class="fa-solid fa-globe text-emerald-500"></i>
+                <span id="currentLangText">KM</span>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 text-slate-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- App Body Layout -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- Left Sidebar: Camera List & Devices -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-30 w-72 bg-white dark:bg-icsee-darkCard border-r border-slate-200 dark:border-icsee-darkBorder transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-slate-200 dark:border-icsee-darkBorder flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group text-emerald-500"></i>
+                    <h2 class="font-bold text-sm tracking-wide" data-lang="camListTitle">បញ្ជីកាមេរ៉ា (4)</h2>
+                </div>
+                <button onclick="refreshCameras()" class="text-slate-400 hover:text-emerald-500 transition-colors text-xs" title="Refresh">
+                    <i class="fa-solid fa-rotate-right" id="refreshIcon"></i>
+                </button>
+            </div>
+
+            <!-- Camera List Stream Selector -->
+            <div id="cameraListContainer" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+                <!-- Camera items injected via JS -->
+            </div>
+
+            <!-- Quick Protocol Options & Status -->
+            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-icsee-darkBorder text-xs space-y-2">
+                <div class="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                    <span data-lang="connectionProto">ពិធីការ៖</span>
+                    <span class="font-semibold text-emerald-500">ICSee Cloud (P2P)</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                    <span data-lang="bandwidth">កម្រិតបញ្ជូនសរុប៖</span>
+                    <span id="totalBitrate" class="font-mono text-slate-700 dark:text-slate-300">4.8 Mbps</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay backdrop for mobile sidebar -->
+        <div id="sidebarBackdrop" class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden backdrop-blur-sm"></div>
+
+        <!-- Main Workspace (Center Screen) -->
+        <main class="flex-1 flex flex-col overflow-y-auto bg-slate-100 dark:bg-icsee-darkBg p-2 md:p-4 space-y-4">
+
+            <!-- Video Grid Controls & Layout Selector -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-icsee-darkCard p-2.5 rounded-2xl border border-slate-200 dark:border-icsee-darkBorder shadow-sm">
+                <!-- Layout Switcher Buttons -->
+                <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800/70 p-1 rounded-xl">
+                    <button onclick="setLayout(1)" id="btnLayout1" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-emerald-500">
+                        <i class="fa-solid fa-square"></i>
+                        <span>1x1</span>
+                    </button>
+                    <button onclick="setLayout(4)" id="btnLayout4" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 bg-emerald-500 text-white shadow-sm">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                        <span>2x2</span>
+                    </button>
+                    <button onclick="setLayout(9)" id="btnLayout9" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-emerald-500">
+                        <i class="fa-solid fa-grip"></i>
+                        <span>3x3</span>
+                    </button>
+                </div>
+
+                <!-- Global Live Controls -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleAllAudio()" id="globalMuteBtn" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center space-x-1.5">
+                        <i class="fa-solid fa-volume-high text-emerald-500" id="globalMuteIcon"></i>
+                        <span id="globalMuteText" data-lang="soundOn">សំឡេង</span>
+                    </button>
+                    <button onclick="snapAllGrid()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-all flex items-center space-x-1.5">
+                        <i class="fa-solid fa-camera text-amber-500"></i>
+                        <span data-lang="snapAll">ថតទាំងអស់</span>
+                    </button>
+                    <button onclick="triggerSirenAlert()" class="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 text-xs font-medium transition-all flex items-center space-x-1.5">
+                        <i class="fa-solid fa-bell text-red-500 animate-bounce"></i>
+                        <span data-lang="siren">សំឡេងអាសន្ន</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Player Grid Display Area -->
+            <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[350px] md:min-h-[480px]">
+                <!-- Camera stream cards will be rendered here dynamically -->
+            </div>
+
+            <!-- Bottom Control Panel: PTZ, Intercom & Timeline -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+                <!-- PTZ Directional Pad & Preset Controls (Lg: 5 Cols) -->
+                <div class="lg:col-span-5 bg-white dark:bg-icsee-darkCard p-4 rounded-2xl border border-slate-200 dark:border-icsee-darkBorder shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800/80 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-compass text-emerald-500 text-base"></i>
+                            <h3 class="font-bold text-sm" data-lang="ptzTitle">បញ្ជាទិសដៅ PTZ (Pan-Tilt-Zoom)</h3>
+                        </div>
+                        <span id="ptzTargetName" class="text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 font-medium">Cam 01</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                        <!-- 8-Way PTZ Controller Dial -->
+                        <div class="relative w-40 h-40 mx-auto flex items-center justify-center bg-slate-100 dark:bg-slate-900 rounded-full border-4 border-slate-200 dark:border-slate-800 shadow-inner">
+                            <!-- Outer directional buttons -->
+                            <button onclick="panTilt('up')" class="absolute top-1 p-2 text-slate-600 dark:text-slate-300 hover:text-emerald-500 active:scale-95 transition-transform">
+                                <i class="fa-solid fa-caret-up text-xl"></i>
+                            </button>
+                            <button onclick="panTilt('down')" class="absolute bottom-1 p-2 text-slate-600 dark:text-slate-300 hover:text-emerald-500 active:scale-95 transition-transform">
+                                <i class="fa-solid fa-caret-down text-xl"></i>
+                            </button>
+                            <button onclick="panTilt('left')" class="absolute left-1 p-2 text-slate-600 dark:text-slate-300 hover:text-emerald-500 active:scale-95 transition-transform">
+                                <i class="fa-solid fa-caret-left text-xl"></i>
+                            </button>
+                            <button onclick="panTilt('right')" class="absolute right-1 p-2 text-slate-600 dark:text-slate-300 hover:text-emerald-500 active:scale-95 transition-transform">
+                                <i class="fa-solid fa-caret-right text-xl"></i>
+                            </button>
+
+                            <!-- Diagonals -->
+                            <button onclick="panTilt('up-left')" class="absolute top-4 left-4 text-xs text-slate-400 hover:text-emerald-500 active:scale-95">
+                                <i class="fa-solid fa-arrow-up-left"></i>
+                            </button>
+                            <button onclick="panTilt('up-right')" class="absolute top-4 right-4 text-xs text-slate-400 hover:text-emerald-500 active:scale-95">
+                                <i class="fa-solid fa-arrow-up-right"></i>
+                            </button>
+                            <button onclick="panTilt('down-left')" class="absolute bottom-4 left-4 text-xs text-slate-400 hover:text-emerald-500 active:scale-95">
+                                <i class="fa-solid fa-arrow-down-left"></i>
+                            </button>
+                            <button onclick="panTilt('down-right')" class="absolute bottom-4 right-4 text-xs text-slate-400 hover:text-emerald-500 active:scale-95">
+                                <i class="fa-solid fa-arrow-down-right"></i>
+                            </button>
+
+                            <!-- Center Auto Scan Button -->
+                            <button onclick="panTilt('auto')" class="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold text-xs flex flex-col items-center justify-center shadow-md active:scale-90 transition-transform">
+                                <i class="fa-solid fa-arrows-spin text-sm"></i>
+                                <span class="text-[9px]" data-lang="autoScan">ស្វ័យប្រវត្ត</span>
+                            </button>
+                        </div>
+
+                        <!-- Zoom & Speed Controls -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" data-lang="zoomControl">ពង្រីក / បង្រួម (Zoom)</label>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="zoomCamera('in')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-semibold transition-all">
+                                        <i class="fa-solid fa-magnifying-glass-plus"></i> +
+                                    </button>
+                                    <button onclick="zoomCamera('out')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-semibold transition-all">
+                                        <i class="fa-solid fa-magnifying-glass-minus"></i> -
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1" data-lang="presets">ទីតាំងចំណាំ (Presets)</label>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <button onclick="goToPreset(1)" class="py-1 bg-slate-100 dark:bg-slate-800 hover:border-emerald-500 border border-transparent rounded-lg text-xs font-mono">P1</button>
+                                    <button onclick="goToPreset(2)" class="py-1 bg-slate-100 dark:bg-slate-800 hover:border-emerald-500 border border-transparent rounded-lg text-xs font-mono">P2</button>
+                                    <button onclick="goToPreset(3)" class="py-1 bg-slate-100 dark:bg-slate-800 hover:border-emerald-500 border border-transparent rounded-lg text-xs font-mono">P3</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Playback & Realtime Actions (Lg: 7 Cols) -->
+                <div class="lg:col-span-7 bg-white dark:bg-icsee-darkCard p-4 rounded-2xl border border-slate-200 dark:border-icsee-darkBorder shadow-sm flex flex-col justify-between space-y-4">
+                    
+                    <!-- Quick Toolbar -->
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-emerald-500"></i>
+                            <h3 class="font-bold text-sm" data-lang="quickTools">របារបញ្ជារហ័ស</h3>
+                        </div>
+
+                        <!-- Intercom Talk Button -->
+                        <button id="intercomBtn" onmousedown="startIntercom()" onmouseup="stopIntercom()" ontouchstart="startIntercom()" ontouchend="stopIntercom()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 border border-slate-200 dark:border-slate-700">
+                            <i class="fa-solid fa-microphone text-emerald-500 hover:text-white" id="micIcon"></i>
+                            <span data-lang="talkMic">ចុចជាប់ដើម្បីនិយាយ</span>
+                        </button>
+                    </div>
+
+                    <!-- Night Vision Mode Selectors -->
+                    <div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 block" data-lang="nightVisionMode">របៀបមើលពេលយប់ (Night Vision)</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setNightVision('ir')" id="nvIr" class="py-2 px-3 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-500 text-xs font-medium flex items-center justify-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-moon"></i>
+                                <span data-lang="nvIR">អាំងហ្វ្រារ៉េដ (IR)</span>
+                            </button>
+                            <button onclick="setNightVision('color')" id="nvColor" class="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-xs font-medium flex items-center justify-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <span data-lang="nvColor">ព័ណ៌ធម្មជាតិ (Color)</span>
+                            </button>
+                            <button onclick="setNightVision('smart')" id="nvSmart" class="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-xs font-medium flex items-center justify-center space-x-1.5 transition-all">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span data-lang="nvSmart">ស្វ័យប្រវត្ត (Smart)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Video Playback Timeline Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1 text-xs">
+                            <span class="font-semibold text-slate-600 dark:text-slate-300 flex items-center space-x-1">
+                                <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
+                                <span data-lang="playbackTitle">ប្រវត្តិថតឡើងវិញ (Playback)</span>
+                            </span>
+                            <span id="timelineTime" class="font-mono text-emerald-500">18:40:00 (ផ្សាយផ្ទាល់)</span>
+                        </div>
+
+                        <!-- Motion Alerts Bar overlay -->
+                        <div class="relative w-full">
+                            <input type="range" id="playbackSlider" min="0" max="86400" value="67200" class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" oninput="updateTimeline(this.value)">
+                            
+                            <!-- Motion event markers simulation -->
+                            <div class="absolute top-0 left-[20%] w-2 h-3 bg-red-500/80 rounded pointer-events-none" title="Motion Event 04:48"></div>
+                            <div class="absolute top-0 left-[45%] w-3 h-3 bg-red-500/80 rounded pointer-events-none" title="Motion Event 10:48"></div>
+                            <div class="absolute top-0 left-[75%] w-2 h-3 bg-amber-500/80 rounded pointer-events-none" title="Human Detect 18:00"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+                            <span>00:00</span>
+                            <span>06:00</span>
+                            <span>12:00</span>
+                            <span>18:00</span>
+                            <span>24:00</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Snapshot Preview Drawer / Toast Box -->
+    <div id="snapshotToast" class="fixed bottom-5 right-5 z-50 bg-white dark:bg-icsee-darkCard border border-emerald-500/40 p-3 rounded-2xl shadow-2xl flex items-center space-x-3 transform translate-y-32 opacity-0 transition-all duration-300">
+        <img id="toastImg" src="" class="w-16 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700" alt="Snapshot">
+        <div>
+            <h4 class="font-bold text-xs text-emerald-500" data-lang="snapSaved">រូបថតត្រូវបានរក្សាទុក!</h4>
+            <p class="text-[10px] text-slate-400" id="toastTime">00:00:00</p>
+        </div>
+        <button onclick="closeToast()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+    </div>
+
+    <!-- Configuration Modal (P2P / RTSP Add Camera) -->
+    <div id="configModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-icsee-darkCard border border-slate-200 dark:border-icsee-darkBorder w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-plus text-emerald-500"></i>
+                    <span data-lang="addCamModalTitle">បន្ថែម / កែសម្រួលកាមេរ៉ា</span>
+                </h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block mb-1 text-slate-400" data-lang="camName">ឈ្មោះកាមេរ៉ា</label>
+                    <input type="text" id="cfgName" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500" placeholder="ឧ. កាមេរ៉ាផ្លូវចូល">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400" data-lang="p2pID">លេខសម្គាល់ Device Cloud ID / Serial</label>
+                    <input type="text" id="cfgId" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 font-mono" placeholder="ឧ. icsee_849204928">
+                </div>
+                <div>
+                    <label class="block mb-1 text-slate-400" data-lang="rtspUrl">តំណភ្ជាប់ RTSP / Video Stream URL (ជម្រើស)</label>
+                    <input type="text" id="cfgRtsp" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 font-mono" placeholder="rtsp://admin:12345@192.168.1.100:554/stream1">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeConfigModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold" data-lang="cancel">បោះបង់</button>
+                <button onclick="saveCameraConfig()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold" data-lang="save">រក្សាទុក</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Default Cameras Data
+        let cameras = [
+            { id: 1, name: 'កាមេរ៉ា ០១ - រ៉ងខាងមុខ', serial: 'IC-99201', online: true, fps: 30, bitrate: '1.4 Mbps', resolution: 'HD 1080P', ptz: true, canvasBg: '#0f172a', panX: 0, panY: 0, scale: 1 },
+            { id: 2, name: 'កាមេរ៉ា ០២ - ការិយាល័យធំ', serial: 'IC-99202', online: true, fps: 28, bitrate: '1.2 Mbps', resolution: '4K Ultra', ptz: true, canvasBg: '#111827', panX: 0, panY: 0, scale: 1 },
+            { id: 3, name: 'កាមេរ៉ា ០៣ - ឃ្លាំងស្តុកអីវ៉ាន់', serial: 'IC-99203', online: true, fps: 25, bitrate: '1.1 Mbps', resolution: 'HD 1080P', ptz: false, canvasBg: '#0b132b', panX: 0, panY: 0, scale: 1 },
+            { id: 4, name: 'កាមេរ៉ា ០៤ - ចំណតរថយន្ត', serial: 'IC-99204', online: true, fps: 30, bitrate: '1.5 Mbps', resolution: '2K QHD', ptz: true, canvasBg: '#1c1917', panX: 0, panY: 0, scale: 1 }
+        ];
+
+        let activeCameraId = 1;
+        let currentLayout = 4; // 1, 4, or 9
+        let isGlobalMuted = false;
+        let currentLang = 'km';
+
+        // Language Dictionaries
+        const translations = {
+            km: {
+                subHeader: "ប្រព័ន្ធសុវត្ថិភាពឆ្លាតវៃ v3.4",
+                systemNormal: "ប្រព័ន្ធដំណើរការល្អ",
+                addDevice: "បន្ថែមឧបករណ៍",
+                camListTitle: "បញ្ជីកាមេរ៉ា",
+                connectionProto: "ពិធីការ៖",
+                bandwidth: "កម្រិតបញ្ជួនសរុប៖",
+                soundOn: "សំឡេង",
+                snapAll: "ថតទាំងអស់",
+                siren: "សំឡេងអាសន្ន",
+                ptzTitle: "បញ្ជាទិសដៅ PTZ (Pan-Tilt-Zoom)",
+                autoScan: "ស្វ័យប្រវត្ត",
+                zoomControl: "ពង្រីក / បង្រួម (Zoom)",
+                presets: "ទីតាំងចំណាំ (Presets)",
+                quickTools: "របារបញ្ជារហ័ស",
+                talkMic: "ចុចជាប់ដើម្បីនិយាយ",
+                nightVisionMode: "របៀបមើលពេលយប់ (Night Vision)",
+                nvIR: "អាំងហ្វ្រារ៉េដ (IR)",
+                nvColor: "ព័ណ៌ធម្មជាតិ (Color)",
+                nvSmart: "ស្វ័យប្រវត្ត (Smart)",
+                playbackTitle: "ប្រវត្តិថតឡើងវិញ (Playback)",
+                snapSaved: "រូបថតត្រូវបានរក្សាទុក!",
+                addCamModalTitle: "បន្ថែម / កែសម្រួលកាមេរ៉ា",
+                camName: "ឈ្មោះកាមេរ៉ា",
+                p2pID: "លេខសម្គាល់ Device Cloud ID / Serial",
+                rtspUrl: "តំណភ្ជាប់ RTSP / Video Stream URL (ជម្រើស)",
+                cancel: "បោះបង់",
+                save: "រក្សាទុក"
+            },
+            en: {
+                subHeader: "Smart Security System v3.4",
+                systemNormal: "System Normal",
+                addDevice: "Add Device",
+                camListTitle: "Camera List",
+                connectionProto: "Protocol:",
+                bandwidth: "Total Bitrate:",
+                soundOn: "Sound",
+                snapAll: "Snap All",
+                siren: "Siren Alert",
+                ptzTitle: "PTZ Directional Control",
+                autoScan: "Auto Scan",
+                zoomControl: "Zoom Controls",
+                presets: "Preset Positions",
+                quickTools: "Quick Tools",
+                talkMic: "Hold to Talk",
+                nightVisionMode: "Night Vision Mode",
+                nvIR: "Infrared (IR)",
+                nvColor: "Full Color",
+                nvSmart: "Smart Auto",
+                playbackTitle: "History Playback",
+                snapSaved: "Snapshot Saved!",
+                addCamModalTitle: "Add / Edit Camera",
+                camName: "Camera Name",
+                p2pID: "Device Cloud ID / Serial",
+                rtspUrl: "RTSP / Stream URL (Optional)",
+                cancel: "Cancel",
+                save: "Save"
+            }
+        };
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCameraList();
+            renderVideoGrid();
+            startClock();
+            initSidebarEvents();
+        });
+
+        // Toggle Sidebar on Mobile
+        function initSidebarEvents() {
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                backdrop.classList.toggle('hidden');
+            });
+
+            backdrop.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            });
+        }
+
+        // Live Clock Ticker
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const timeString = now.toTimeString().split(' ')[0];
+                document.getElementById('systemClock').innerText = timeString;
+
+                // Update overlay clocks on camera cards
+                document.querySelectorAll('.cam-timestamp').forEach(el => {
+                    el.innerText = `${now.toISOString().split('T')[0]} ${timeString}`;
+                });
+            }, 1000);
+        }
+
+        // Render Left Sidebar Cameras
+        function renderCameraList() {
+            const container = document.getElementById('cameraListContainer');
+            document.querySelector('[data-lang="camListTitle"]').innerText = `${translations[currentLang].camListTitle} (${cameras.length})`;
+            
+            container.innerHTML = cameras.map(cam => `
+                <div onclick="selectActiveCamera(${cam.id})" class="p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${cam.id === activeCameraId ? 'bg-emerald-500/10 border-emerald-500 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-emerald-500/50'}">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="relative w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-video text-xs ${cam.id === activeCameraId ? 'text-emerald-500' : 'text-slate-400'}"></i>
+                            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${cam.online ? 'bg-emerald-500 live-pulse' : 'bg-red-500'}"></span>
+                        </div>
+                        <div class="truncate">
+                            <h4 class="font-semibold text-xs truncate ${cam.id === activeCameraId ? 'text-emerald-500' : ''}">${cam.name}</h4>
+                            <p class="text-[10px] text-slate-400 font-mono">${cam.serial}</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 font-mono">${cam.resolution}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Video Player Canvas Grid
+        function renderVideoGrid() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = '';
+
+            let count = currentLayout;
+            let displayCams = cameras.slice(0, count);
+
+            // Fill empty slots if count > cameras.length
+            while(displayCams.length < count) {
+                displayCams.push({
+                    id: 99 + displayCams.length,
+                    name: `កាមេរ៉ារង់ចាំ ${displayCams.length + 1}`,
+                    serial: 'N/A',
+                    online: false,
+                    fps: 0,
+                    bitrate: '0 Kbps',
+                    resolution: 'OFFLINE',
+                    canvasBg: '#05070a',
+                    panX: 0, panY: 0, scale: 1
+                });
+            }
+
+            displayCams.forEach(cam => {
+                const card = document.createElement('div');
+                card.className = `relative rounded-2xl overflow-hidden bg-slate-900 border ${cam.id === activeCameraId ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-800'} flex flex-col justify-between shadow-lg group`;
+                
+                card.onclick = () => selectActiveCamera(cam.id);
+
+                card.innerHTML = `
+                    <!-- Video Canvas Simulation -->
+                    <div class="absolute inset-0 overflow-hidden flex items-center justify-center bg-slate-950">
+                        <svg class="w-full h-full transform transition-transform duration-300" style="transform: translate(${cam.panX || 0}px, ${cam.panY || 0}px) scale(${cam.scale || 1});" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+                            <!-- Background Room Outline -->
+                            <rect width="800" height="450" fill="${cam.canvasBg}"/>
+                            <line x1="0" y1="350" x2="800" y2="350" stroke="#1e293b" stroke-width="2"/>
+                            <line x1="150" y1="0" x2="150" y2="350" stroke="#1e293b" stroke-width="1.5"/>
+                            <line x1="650" y1="0" x2="650" y2="350" stroke="#1e293b" stroke-width="1.5"/>
+
+                            <!-- Simulated Camera Object / Motion Vector -->
+                            <g transform="translate(350, 180)">
+                                <circle cx="50" cy="50" r="40" fill="#10B981" opacity="0.1"/>
+                                <circle cx="50" cy="50" r="25" fill="#10B981" opacity="0.2"/>
+                                <circle cx="50" cy="50" r="10" fill="#10B981"/>
+                            </g>
+                            
+                            <!-- Timestamp watermark -->
+                            <text x="20" y="430" fill="#ffffff" opacity="0.7" font-family="monospace" font-size="14">REC ● LIVE STREAM - ICSEE P2P</text>
+                        </svg>
+                    </div>
+
+                    <!-- Top Overlay Bar -->
+                    <div class="relative z-10 p-3 flex justify-between items-start bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full ${cam.online ? 'bg-emerald-500 live-pulse' : 'bg-red-500'}"></span>
+                            <div>
+                                <h3 class="text-xs font-bold text-white tracking-wide shadow-sm">${cam.name}</h3>
+                                <p class="text-[9px] font-mono text-emerald-400 cam-timestamp">2026-11-06 18:40:00</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[9px] font-mono bg-black/60 text-slate-300 px-1.5 py-0.5 rounded border border-white/10">${cam.fps} FPS</span>
+                            <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded">${cam.bitrate}</span>
+                        </div>
+                    </div>
+
+                    <!-- Center Offline Placeholder -->
+                    ${!cam.online ? `
+                    <div class="relative z-10 flex flex-col items-center justify-center my-auto text-slate-500">
+                        <i class="fa-solid fa-video-slash text-3xl mb-2"></i>
+                        <span class="text-xs">កាមេរ៉ាមិនទាន់ភ្ជាប់</span>
+                    </div>
+                    ` : ''}
+
+                    <!-- Bottom Overlay Controls (Visible on Hover/Active) -->
+                    <div class="relative z-10 p-2.5 flex justify-between items-center bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="event.stopPropagation(); snapSingle(${cam.id})" class="text-white hover:text-emerald-400 text-xs p-1">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); toggleRecord(this)" class="text-white hover:text-red-500 text-xs p-1">
+                                <i class="fa-solid fa-circle"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); toggleAudio(this)" class="text-white hover:text-emerald-400 text-xs p-1">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="event.stopPropagation(); toggleHD(this)" class="text-[10px] font-bold text-amber-400 border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 rounded">HD</button>
+                            <button onclick="event.stopPropagation(); toggleFullscreen(this.parentElement.parentElement.parentElement)" class="text-white hover:text-emerald-400 text-xs p-1">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // PTZ Pan-Tilt Actions
+        function panTilt(direction) {
+            let cam = cameras.find(c => c.id === activeCameraId);
+            if (!cam) return;
+
+            const step = 25;
+            if (direction === 'up') cam.panY = (cam.panY || 0) + step;
+            if (direction === 'down') cam.panY = (cam.panY || 0) - step;
+            if (direction === 'left') cam.panX = (cam.panX || 0) + step;
+            if (direction === 'right') cam.panX = (cam.panX || 0) - step;
+            if (direction === 'up-left') { cam.panY += step; cam.panX += step; }
+            if (direction === 'up-right') { cam.panY += step; cam.panX -= step; }
+            if (direction === 'down-left') { cam.panY -= step; cam.panX += step; }
+            if (direction === 'down-right') { cam.panY -= step; cam.panX -= step; }
+            if (direction === 'auto') { cam.panX = 0; cam.panY = 0; cam.scale = 1; }
+
+            renderVideoGrid();
+        }
+
+        // Zoom Camera Logic
+        function zoomCamera(type) {
+            let cam = cameras.find(c => c.id === activeCameraId);
+            if (!cam) return;
+
+            cam.scale = cam.scale || 1;
+            if (type === 'in' && cam.scale < 2.5) cam.scale += 0.25;
+            if (type === 'out' && cam.scale > 0.75) cam.scale -= 0.25;
+
+            renderVideoGrid();
+        }
+
+        // Preset Shortcut
+        function goToPreset(num) {
+            let cam = cameras.find(c => c.id === activeCameraId);
+            if (!cam) return;
+
+            if (num === 1) { cam.panX = -30; cam.panY = 20; cam.scale = 1.2; }
+            if (num === 2) { cam.panX = 40; cam.panY = -10; cam.scale = 1.5; }
+            if (num === 3) { cam.panX = 0; cam.panY = 0; cam.scale = 1.0; }
+
+            renderVideoGrid();
+            showToast(`Preset P${num} loaded for ${cam.name}`);
+        }
+
+        // Select Active Camera Card
+        function selectActiveCamera(id) {
+            activeCameraId = id;
+            const cam = cameras.find(c => c.id === id);
+            if (cam) {
+                document.getElementById('ptzTargetName').innerText = cam.name;
+            }
+            renderCameraList();
+            renderVideoGrid();
+        }
+
+        // Set Grid Layout (1x1, 2x2, 3x3)
+        function setLayout(count) {
+            currentLayout = count;
+            
+            // Reset button active states
+            ['btnLayout1', 'btnLayout4', 'btnLayout9'].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-emerald-500";
+            });
+
+            const activeBtn = document.getElementById(`btnLayout${count}`);
+            activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 bg-emerald-500 text-white shadow-sm";
+
+            const grid = document.getElementById('videoGrid');
+            if (count === 1) grid.className = "grid grid-cols-1 gap-3 min-h-[450px]";
+            if (count === 4) grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[480px]";
+            if (count === 9) grid.className = "grid grid-cols-2 md:grid-cols-3 gap-3 min-h-[520px]";
+
+            renderVideoGrid();
+        }
+
+        // Snapshot Action & Toast Preview
+        function snapSingle(id) {
+            const cam = cameras.find(c => c.id === id) || cameras[0];
+            const toast = document.getElementById('snapshotToast');
+            const toastImg = document.getElementById('toastImg');
+            const toastTime = document.getElementById('toastTime');
+
+            // Generate simple placeholder image
+            toastImg.src = `https://placehold.co/200x150/10B981/ffffff?text=${encodeURIComponent(cam.name)}`;
+            toastTime.innerText = new Date().toLocaleTimeString();
+
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            setTimeout(() => closeToast(), 4000);
+        }
+
+        function snapAllGrid() {
+            snapSingle(activeCameraId);
+        }
+
+        function closeToast() {
+            document.getElementById('snapshotToast').classList.add('translate-y-32', 'opacity-0');
+        }
+
+        // Intercom Mic simulation
+        function startIntercom() {
+            const micIcon = document.getElementById('micIcon');
+            const btn = document.getElementById('intercomBtn');
+            micIcon.className = "fa-solid fa-microphone text-red-500 animate-pulse";
+            btn.classList.add('border-red-500', 'bg-red-500/10');
+        }
+
+        function stopIntercom() {
+            const micIcon = document.getElementById('micIcon');
+            const btn = document.getElementById('intercomBtn');
+            micIcon.className = "fa-solid fa-microphone text-emerald-500";
+            btn.classList.remove('border-red-500', 'bg-red-500/10');
+        }
+
+        // Siren Alert Trigger Simulation
+        function triggerSirenAlert() {
+            document.body.classList.add('ring-4', 'ring-red-500/50');
+            setTimeout(() => document.body.classList.remove('ring-4', 'ring-red-500/50'), 1500);
+            showToast('⚠️ សំឡេងអាសន្នបានបើកដំណើរការ!');
+        }
+
+        // Night Vision Switcher
+        function setNightVision(mode) {
+            ['nvIr', 'nvColor', 'nvSmart'].forEach(id => {
+                const b = document.getElementById(id);
+                b.className = "py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-xs font-medium flex items-center justify-center space-x-1.5 transition-all";
+            });
+
+            const activeBtn = document.getElementById(`nv${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
+            activeBtn.className = "py-2 px-3 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-500 text-xs font-medium flex items-center justify-center space-x-1.5 transition-all";
+        }
+
+        // Timeline playback slider update
+        function updateTimeline(val) {
+            const hours = Math.floor(val / 3600);
+            const mins = Math.floor((val % 3600) / 60);
+            const formatted = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
+            document.getElementById('timelineTime').innerText = `${formatted} (Playback)`;
+        }
+
+        // Toggle Audio
+        function toggleAudio(btn) {
+            const icon = btn.querySelector('i');
+            if (icon.classList.contains('fa-volume-high')) {
+                icon.className = 'fa-solid fa-volume-xmark text-red-500';
+            } else {
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        }
+
+        function toggleAllAudio() {
+            isGlobalMuted = !isGlobalMuted;
+            const icon = document.getElementById('globalMuteIcon');
+            const text = document.getElementById('globalMuteText');
+            if (isGlobalMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-red-500';
+                text.innerText = 'បិទសំឡេង';
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-emerald-500';
+                text.innerText = translations[currentLang].soundOn;
+            }
+        }
+
+        // Toggle Record Video state
+        function toggleRecord(btn) {
+            const icon = btn.querySelector('i');
+            if (icon.classList.contains('text-red-500')) {
+                icon.classList.remove('text-red-500', 'animate-pulse');
+            } else {
+                icon.classList.add('text-red-500', 'animate-pulse');
+                snapSingle(activeCameraId);
+            }
+        }
+
+        // Toggle HD / SD Quality
+        function toggleHD(btn) {
+            if (btn.innerText === 'HD') {
+                btn.innerText = 'SD';
+                btn.className = "text-[10px] font-bold text-slate-400 border border-slate-600 bg-slate-800 px-1.5 py-0.5 rounded";
+            } else {
+                btn.innerText = 'HD';
+                btn.className = "text-[10px] font-bold text-amber-400 border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 rounded";
+            }
+        }
+
+        // Refresh Camera list simulation
+        function refreshCameras() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                renderCameraList();
+            }, 800);
+        }
+
+        // Language Toggle (Khmer / English)
+        function toggleLanguage() {
+            currentLang = currentLang === 'km' ? 'en' : 'km';
+            document.getElementById('currentLangText').innerText = currentLang.toUpperCase();
+            
+            // Translate static elements
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+
+            renderCameraList();
+        }
+
+        // Theme Toggle (Dark / Light)
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+        }
+
+        // Fullscreen toggle
+        function toggleFullscreen(elem) {
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => alert(`Error enabling fullscreen: ${err.message}`));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Add / Config Camera Modal
+        function openConfigModal() {
+            document.getElementById('configModal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.add('hidden');
+        }
+
+        function saveCameraConfig() {
+            const name = document.getElementById('cfgName').value.trim();
+            const serial = document.getElementById('cfgId').value.trim();
+
+            if (name) {
+                const newCam = {
+                    id: cameras.length + 1,
+                    name: name,
+                    serial: serial || `IC-${Math.floor(10000 + Math.random() * 90000)}`,
+                    online: true,
+                    fps: 30,
+                    bitrate: '1.3 Mbps',
+                    resolution: 'HD 1080P',
+                    canvasBg: '#0f172a',
+                    panX: 0, panY: 0, scale: 1
+                };
+                cameras.push(newCam);
+                renderCameraList();
+                renderVideoGrid();
+                closeConfigModal();
+            }
+        }
+    </script>
+</body>
+</html>
